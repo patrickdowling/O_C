@@ -13,8 +13,13 @@ enum POLYLFO_SETTINGS {
   POLYLFO_SETTING_SHAPE_SPREAD,
   POLYLFO_SETTING_SPREAD,
   POLYLFO_SETTING_COUPLING,
+  POLYLFO_SETTING_FREQ_DIV_B,
+  POLYLFO_SETTING_FREQ_DIV_C,
+  POLYLFO_SETTING_FREQ_DIV_D,
   POLYLFO_SETTING_LAST
 };
+
+
 
 class PolyLfo : public settings::SettingsBase<PolyLfo, POLYLFO_SETTING_LAST> {
 public:
@@ -41,6 +46,18 @@ public:
 
   uint16_t get_coupling() const {
     return values_[POLYLFO_SETTING_COUPLING];
+  }
+
+  frames::PolyLfoFreqDivisions get_freq_div_b() const {
+    return static_cast<frames::PolyLfoFreqDivisions>(values_[POLYLFO_SETTING_FREQ_DIV_B]);
+  }
+
+  frames::PolyLfoFreqDivisions get_freq_div_c() const {
+    return static_cast<frames::PolyLfoFreqDivisions>(values_[POLYLFO_SETTING_FREQ_DIV_C]);
+  }
+
+  frames::PolyLfoFreqDivisions get_freq_div_d() const {
+    return static_cast<frames::PolyLfoFreqDivisions>(values_[POLYLFO_SETTING_FREQ_DIV_D]);
   }
 
   void Init();
@@ -75,13 +92,20 @@ void PolyLfo::Init() {
   frozen_= false;
 }
 
+const char* const freq_div_names[frames::POLYLFO_FREQ_DIV_LAST] = {
+  "unity", "4/5", "2/3", "3/5", "1/2", "2/5", "1/3", "1/4", "1/5", "1/6", "1/7", "1/8", "1/9", "1/10", "1/11", "1/12", "1/13", "1/14", "1/15", "1/16"
+};
+
 SETTINGS_DECLARE(PolyLfo, POLYLFO_SETTING_LAST) {
-  { 64, 0, 255, "COARSE", NULL, settings::STORAGE_TYPE_U8 },
-  { 0, -128, 127, "FINE", NULL, settings::STORAGE_TYPE_I16 },
-  { 0, 0, 255, "SHAPE", NULL, settings::STORAGE_TYPE_U8 },
-  { 0, -128, 127, "SHAPE SPREAD", NULL, settings::STORAGE_TYPE_I8 },
-  { 0, -128, 127, "SPREAD", NULL, settings::STORAGE_TYPE_I8 },
-  { 0, -128, 127, "COUPLING", NULL, settings::STORAGE_TYPE_I8 },
+  { 64, 0, 255, "Coarse freq", NULL, settings::STORAGE_TYPE_U8 },
+  { 0, -128, 127, "Fine freq", NULL, settings::STORAGE_TYPE_I16 },
+  { 0, 0, 255, "Shape", NULL, settings::STORAGE_TYPE_U8 },
+  { 0, -128, 127, "Shape spread", NULL, settings::STORAGE_TYPE_I8 },
+  { 0, -128, 127, "Phase/frq sprd", NULL, settings::STORAGE_TYPE_I8 },
+  { 0, -128, 127, "Coupling", NULL, settings::STORAGE_TYPE_I8 },
+  { frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_LAST - 1, "B freq ratio", freq_div_names, settings::STORAGE_TYPE_U8 },
+  { frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_LAST - 1, "C freq ratio", freq_div_names, settings::STORAGE_TYPE_U8 },
+  { frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_NONE, frames::POLYLFO_FREQ_DIV_LAST - 1, "D freq ratio", freq_div_names, settings::STORAGE_TYPE_U8 },
 };
 
 PolyLfo poly_lfo;
@@ -117,6 +141,10 @@ void FASTRUN POLYLFO_isr() {
   poly_lfo.lfo.set_coupling(USAT16(coupling));
 
   poly_lfo.lfo.set_shape_spread(SCALE8_16(poly_lfo.get_shape_spread() + 128));
+
+  poly_lfo.lfo.set_freq_div_b(poly_lfo.get_freq_div_b());
+  poly_lfo.lfo.set_freq_div_c(poly_lfo.get_freq_div_c());
+  poly_lfo.lfo.set_freq_div_d(poly_lfo.get_freq_div_d());
 
   if (!freeze && !poly_lfo.frozen())
     poly_lfo.lfo.Render(freq, reset_phase);
@@ -168,8 +196,9 @@ void POLYLFO_menu() {
   graphics.print(PolyLfo::value_attr(poly_lfo_state.left_edit_mode).name);
   graphics.print(poly_lfo.get_value(poly_lfo_state.left_edit_mode), 5);
 
-  int first_visible_param = POLYLFO_SETTING_SHAPE;
-
+  int first_visible_param = poly_lfo_state.selected_param - 3;
+  if (first_visible_param < POLYLFO_SETTING_SHAPE) first_visible_param = POLYLFO_SETTING_SHAPE ;
+  
   UI_START_MENU(kStartX);
   UI_BEGIN_ITEMS_LOOP(kStartX, first_visible_param, POLYLFO_SETTING_LAST, poly_lfo_state.selected_param, 0)
     UI_DRAW_EDITABLE(poly_lfo_state.editing);
