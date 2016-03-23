@@ -41,19 +41,6 @@ enum CVMapping {
   CV_MAPPING_LAST
 };
 
-enum EnvelopeType {
-  ENV_TYPE_AD,
-  ENV_TYPE_ADSR,
-  ENV_TYPE_ADR,
-  ENV_TYPE_AR,
-  ENV_TYPE_ADSAR,
-  ENV_TYPE_ADAR,
-  ENV_TYPE_AD_LOOP,
-  ENV_TYPE_ADR_LOOP,
-  ENV_TYPE_ADAR_LOOP,
-  ENV_TYPE_LAST, ENV_TYPE_FIRST = ENV_TYPE_AD
-};
-
 class EnvelopeGenerator : public settings::SettingsBase<EnvelopeGenerator, ENV_SETTING_LAST> {
 public:
 
@@ -61,8 +48,8 @@ public:
 
   void Init(OC::DigitalInput default_trigger);
 
-  EnvelopeType get_type() const {
-    return static_cast<EnvelopeType>(values_[ENV_SETTING_TYPE]);
+  peaks::EnvelopeType get_type() const {
+    return static_cast<peaks::EnvelopeType>(values_[ENV_SETTING_TYPE]);
   }
 
   OC::DigitalInput get_trigger_input() const {
@@ -108,16 +95,16 @@ public:
 
   int active_segments() const {
     switch (get_type()) {
-      case ENV_TYPE_AD:
-      case ENV_TYPE_AR:
-      case ENV_TYPE_AD_LOOP:
+      case peaks::ENV_TYPE_AD:
+      case peaks::ENV_TYPE_AR:
+      case peaks::ENV_TYPE_AD_LOOP:
         return 2;
-      case ENV_TYPE_ADR:
-      case ENV_TYPE_ADSR:
-      case ENV_TYPE_ADSAR:
-      case ENV_TYPE_ADAR:
-      case ENV_TYPE_ADR_LOOP:
-      case ENV_TYPE_ADAR_LOOP:
+      case peaks::ENV_TYPE_ADR:
+      case peaks::ENV_TYPE_ADSR:
+      case peaks::ENV_TYPE_ADSAR:
+      case peaks::ENV_TYPE_ADAR:
+      case peaks::ENV_TYPE_ADR_LOOP:
+      case peaks::ENV_TYPE_ADAR_LOOP:
         return 4;
       default: break;
     }
@@ -157,17 +144,17 @@ public:
     s[2] = USAT16(s[2]);
     s[3] = USAT16(s[3]);
 
-    EnvelopeType type = get_type();
+    peaks::EnvelopeType type = get_type();
     switch (type) {
-      case ENV_TYPE_AD: env_.set_ad(s[0], s[1]); break;
-      case ENV_TYPE_ADSR: env_.set_adsr(s[0], s[1], s[2]>>1, s[3]); break;
-      case ENV_TYPE_ADR: env_.set_adr(s[0], s[1], s[2]>>1, s[3]); break;
-      case ENV_TYPE_AR: env_.set_ar(s[0], s[1]); break;
-      case ENV_TYPE_ADSAR: env_.set_adsar(s[0], s[1], s[2]>>1, s[3]); break;
-      case ENV_TYPE_ADAR: env_.set_adar(s[0], s[1], s[2]>>1, s[3]); break;
-      case ENV_TYPE_AD_LOOP: env_.set_ad_loop(s[0], s[1]); break;
-      case ENV_TYPE_ADR_LOOP: env_.set_adr_loop(s[0], s[1], s[2]>>1, s[3]); break;
-      case ENV_TYPE_ADAR_LOOP: env_.set_adar_loop(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_AD: env_.set_ad(s[0], s[1]); break;
+      case peaks::ENV_TYPE_ADSR: env_.set_adsr(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_ADR: env_.set_adr(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_AR: env_.set_ar(s[0], s[1]); break;
+      case peaks::ENV_TYPE_ADSAR: env_.set_adsar(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_ADAR: env_.set_adar(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_AD_LOOP: env_.set_ad_loop(s[0], s[1]); break;
+      case peaks::ENV_TYPE_ADR_LOOP: env_.set_adr_loop(s[0], s[1], s[2]>>1, s[3]); break;
+      case peaks::ENV_TYPE_ADAR_LOOP: env_.set_adar_loop(s[0], s[1], s[2]>>1, s[3]); break;
       default:
       break;
     }
@@ -208,7 +195,7 @@ public:
 
 private:
   peaks::MultistageEnvelope env_;
-  EnvelopeType last_type_;
+  peaks::EnvelopeType last_type_;
   bool gate_raised_;
 };
 
@@ -216,12 +203,12 @@ void EnvelopeGenerator::Init(OC::DigitalInput default_trigger) {
   InitDefaults();
   apply_value(ENV_SETTING_TRIGGER_INPUT, default_trigger);
   env_.Init();
-  last_type_ = ENV_TYPE_LAST;
+  last_type_ = peaks::ENV_TYPE_LAST;
   gate_raised_ = false;
 }
 
-const char* const envelope_types[ENV_TYPE_LAST] = {
-  "AD", "ADSR", "ADR", "AR", "ADSAR", "ADAR", "AD_LOOP", "ADR_LOOP", "ADAR_LOOP"
+const char* const envelope_types[peaks::ENV_TYPE_LAST] = {
+  "AD", "ADSR", "ADR", "AR", "ADSAR", "ADAR", "AD loop", "ADR loop", "ADAR loop"
 };
 
 const char* const envelope_shapes[peaks::ENV_SHAPE_LAST] = {
@@ -229,11 +216,11 @@ const char* const envelope_shapes[peaks::ENV_SHAPE_LAST] = {
 };
 
 const char* const cv_mapping_names[CV_MAPPING_LAST] = {
-  "off", "S1", "S2", "S3", "S4"
+  "off", "Att", "Dec", "Sus", "Rel"
 };
 
 SETTINGS_DECLARE(EnvelopeGenerator, ENV_SETTING_LAST) {
-  { ENV_TYPE_AD, ENV_TYPE_FIRST, ENV_TYPE_LAST-1, "TYPE", envelope_types, settings::STORAGE_TYPE_U8 },
+  { peaks::ENV_TYPE_AD, peaks::ENV_TYPE_FIRST, peaks::ENV_TYPE_LAST-1, "TYPE", envelope_types, settings::STORAGE_TYPE_U8 },
   { 128, 0, 255, "S1", NULL, settings::STORAGE_TYPE_U16 }, // u16 in case resolution proves insufficent
   { 128, 0, 255, "S2", NULL, settings::STORAGE_TYPE_U16 },
   { 128, 0, 255, "S3", NULL, settings::STORAGE_TYPE_U16 },
@@ -494,7 +481,7 @@ bool ENVGEN_encoders() {
   } else {
     if (left_value) {
       left_value += envgen.ui.left_encoder_value;
-      CONSTRAIN(left_value, ENV_TYPE_FIRST, ENV_TYPE_LAST - 1);
+      CONSTRAIN(left_value, peaks::ENV_TYPE_FIRST, peaks::ENV_TYPE_LAST - 1);
       envgen.ui.left_encoder_value = left_value;
     }
     if (right_value) {

@@ -109,7 +109,17 @@ size_t MultistageEnvelope::render_preview(
       }
     }
 
-    uint32_t width = 1 + (time_[segment]>>11);
+    uint32_t width ;
+    if (num_segments == 2 && envelope_type_ != ENV_TYPE_AR) {
+      width = 1 + (time_[segment] >> 10);
+    } else {
+      width = 1 + (time_[segment] >> 11);
+      if (num_segments == 3 || envelope_type_ == ENV_TYPE_AR) {
+        width = width + (width >> 2);
+      } else if (num_segments == 5) {
+        width = width - (width >> 2) ;
+      }
+    }
     uint32_t phase = 0;
     uint32_t phase_increment = (0xff << 24) / width;
 

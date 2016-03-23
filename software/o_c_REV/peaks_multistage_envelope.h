@@ -32,23 +32,21 @@
 #include <stdint.h>
 #include "util/util_macros.h"
 //#include "stmlib/stmlib.h"
-//#include "peaks/gate_processor.h"
+#include "peaks_gate_processor.h"
 
 namespace peaks {
 
-enum ControlBitMask {
-  CONTROL_GATE = 1,
-  CONTROL_GATE_RISING = 2,
-  CONTROL_GATE_FALLING = 4,
-
-  CONTROL_GATE_AUXILIARY = 16,
-  CONTROL_GATE_RISING_AUXILIARY = 32,
-  CONTROL_GATE_FALLING_AUXILIARY = 64
-};
-
-enum ControlMode {
-  CONTROL_MODE_FULL,
-  CONTROL_MODE_HALF
+enum EnvelopeType {
+  ENV_TYPE_AD,
+  ENV_TYPE_ADSR,
+  ENV_TYPE_ADR,
+  ENV_TYPE_AR,
+  ENV_TYPE_ADSAR,
+  ENV_TYPE_ADAR,
+  ENV_TYPE_AD_LOOP,
+  ENV_TYPE_ADR_LOOP,
+  ENV_TYPE_ADAR_LOOP,
+  ENV_TYPE_LAST, ENV_TYPE_FIRST = ENV_TYPE_AD
 };
 
 enum EnvelopeShape {
@@ -126,6 +124,8 @@ class MultistageEnvelope {
     shape_[2] = release_shape_;
     
     loop_start_ = loop_end_ = 0;
+
+    envelope_type_ = ENV_TYPE_ADSR ;
   }
   
   inline void set_ad(uint16_t attack, uint16_t decay) {
@@ -143,6 +143,8 @@ class MultistageEnvelope {
     shape_[1] = decay_shape_;
     
     loop_start_ = loop_end_ = 0;
+
+    envelope_type_ = ENV_TYPE_AD ;
   }
   
   inline void set_adr(
@@ -167,9 +169,11 @@ class MultistageEnvelope {
     shape_[2] = release_shape_;
     
     loop_start_ = loop_end_ = 0;
+
+    envelope_type_ = ENV_TYPE_ADR ;
   }
   
-  inline void set_ar(uint16_t attack, uint16_t decay) {
+  inline void set_ar(uint16_t attack, uint16_t release) {
     num_segments_ = 2;
     sustain_point_ = 1;
 
@@ -178,12 +182,14 @@ class MultistageEnvelope {
     level_[2] = 0;
 
     time_[0] = attack;
-    time_[1] = decay;
+    time_[1] = release;
     
     shape_[0] = attack_shape_;
     shape_[1] = release_shape_;
     
     loop_start_ = loop_end_ = 0;
+    
+    envelope_type_ = ENV_TYPE_AR ;
   }
   
   inline void set_adsar(
@@ -211,6 +217,8 @@ class MultistageEnvelope {
     shape_[3] = release_shape_;
     
     loop_start_ = loop_end_ = 0;
+    
+    envelope_type_ = ENV_TYPE_ADSAR ;
   }
   
   inline void set_adar(
@@ -238,6 +246,8 @@ class MultistageEnvelope {
     shape_[3] = release_shape_;
    
     loop_start_ = loop_end_ = 0;
+    
+    envelope_type_ = ENV_TYPE_ADAR ;
   }
   
   inline void set_ad_loop(uint16_t attack, uint16_t decay) {
@@ -256,6 +266,8 @@ class MultistageEnvelope {
     
     loop_start_ = 0;
     loop_end_ = 2;
+
+    envelope_type_ = ENV_TYPE_AD_LOOP ;
   }
   
   inline void set_adr_loop(
@@ -281,6 +293,8 @@ class MultistageEnvelope {
     
     loop_start_ = 0;
     loop_end_ = 3;
+
+    envelope_type_ = ENV_TYPE_ADR_LOOP ;
   }
   
   inline void set_adar_loop(
@@ -309,6 +323,8 @@ class MultistageEnvelope {
 
     loop_start_ = 0;
     loop_end_ = 4;
+
+    envelope_type_ = ENV_TYPE_ADAR_LOOP ;
   }
   
   inline void set_hard_reset(bool hard_reset) {
@@ -359,6 +375,7 @@ class MultistageEnvelope {
   EnvelopeShape attack_shape_ ;
   EnvelopeShape decay_shape_ ;
   EnvelopeShape release_shape_ ;
+  EnvelopeType envelope_type_ ;
   
   DISALLOW_COPY_AND_ASSIGN(MultistageEnvelope);
 };
