@@ -146,6 +146,7 @@ unsigned char Rotary::process() {
   // Return emit bits, ie the generated event.
   if ((state & 0x30) == 16) { position++; }
   if ((state & 0x30) == 32) { position--; }
+  return state;
 }
 
 bool Rotary::change() {
