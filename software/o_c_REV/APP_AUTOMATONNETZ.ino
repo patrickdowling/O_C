@@ -121,10 +121,10 @@ const char *cell_event_masks[] = {
 };
 
 SETTINGS_DECLARE(TransformCell, CELL_SETTING_LAST) {
-  {0, tonnetz::TRANSFORM_NONE, tonnetz::TRANSFORM_LAST, "Trfm", tonnetz::transform_names_str, settings::STORAGE_TYPE_U8},
+  {0, tonnetz::TRANSFORM_NONE, tonnetz::TRANSFORM_LAST, "Trfm", tonnetz::transform_names_str, settings::STORAGE_TYPE_U4},
   {0, -12, 12, "Offs", NULL, settings::STORAGE_TYPE_I8},
   {0, CELL_MIN_INVERSION, CELL_MAX_INVERSION, "Inv", NULL, settings::STORAGE_TYPE_I8},
-  {0, CELL_EVENT_NONE, CELL_EVENT_ALL, "Muta", cell_event_masks, settings::STORAGE_TYPE_U8}
+  {0, CELL_EVENT_NONE, CELL_EVENT_ALL, "Muta", cell_event_masks, settings::STORAGE_TYPE_U4}
 };
 
 enum GridSettings {
@@ -290,7 +290,7 @@ const char * const clear_mode_names[] = {
 SETTINGS_DECLARE(AutomatonnetzState, GRID_SETTING_LAST) {
   {8, 0, 8*GRID_DIMENSION - 1, "dx", NULL, settings::STORAGE_TYPE_I8},
   {4, 0, 8*GRID_DIMENSION - 1, "dy", NULL, settings::STORAGE_TYPE_I8},
-  {MODE_MAJOR, 0, MODE_LAST-1, "Mode", mode_names, settings::STORAGE_TYPE_U8},
+  {MODE_MAJOR, 0, MODE_LAST-1, "Mode", mode_names, settings::STORAGE_TYPE_U4},
   {0, -3, 3, "Oct", NULL, settings::STORAGE_TYPE_I8},
   {OUTPUTA_MODE_ROOT, OUTPUTA_MODE_ROOT, OUTPUTA_MODE_LAST - 1, "OutA", outputa_mode_names, settings::STORAGE_TYPE_U4},
   {CLEAR_MODE_ZERO, CLEAR_MODE_ZERO, CLEAR_MODE_LAST - 1, "Clr", clear_mode_names, settings::STORAGE_TYPE_U4},
