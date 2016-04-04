@@ -21,6 +21,9 @@ enum EnvelopeSettings {
   ENV_SETTING_SEG3_VALUE,
   ENV_SETTING_SEG4_VALUE,
   ENV_SETTING_TRIGGER_INPUT,
+  ENV_SETTING_TRIGGER_DELAY_FINE,
+  ENV_SETTING_TRIGGER_DELAY_COARSE,
+  ENV_SETTING_TRIGGER_DELAY_IGNORE_NEW_TRIGGERS,
   ENV_SETTING_CV1,
   ENV_SETTING_CV2,
   ENV_SETTING_CV3,
@@ -68,6 +71,14 @@ public:
 
   OC::DigitalInput get_trigger_input() const {
     return static_cast<OC::DigitalInput>(values_[ENV_SETTING_TRIGGER_INPUT]);
+  }
+
+  uint32_t get_trigger_delay() const {
+    return (16667 * values_[ENV_SETTING_TRIGGER_DELAY_COARSE]) + (17 * values_[ENV_SETTING_TRIGGER_DELAY_FINE]) ;
+  }
+
+  bool get_trigger_delay_ignore_new_triggers() const {
+    return values_[ENV_SETTING_TRIGGER_DELAY_IGNORE_NEW_TRIGGERS];
   }
 
   CVMapping get_cv1_mapping() const {
@@ -192,9 +203,22 @@ public:
 
     OC::DigitalInput trigger_input = get_trigger_input();
     uint8_t gate_state = 0;
-    if (triggers & DIGITAL_INPUT_MASK(trigger_input))
-      gate_state |= peaks::CONTROL_GATE_RISING;
 
+    bool triggered = triggered_;
+    ++sinceTrigger_; // note: roll-over is not handled - the delay may misbehave, once every 71 hours.
+    if (triggers & DIGITAL_INPUT_MASK(trigger_input)) {
+      if (!get_trigger_delay_ignore_new_triggers() || (!triggered && get_trigger_delay_ignore_new_triggers())) {
+        sinceTrigger_ = 0;
+      }
+      triggered=true;
+    }
+    uint32_t trigger_delay = get_trigger_delay();
+    if ((!trigger_delay && triggered) || (triggered && (sinceTrigger_ >= trigger_delay))) {
+      gate_state |= peaks::CONTROL_GATE_RISING;
+      triggered = false;
+   }
+   triggered_ = triggered;
+ 
     bool gate_raised = OC::DigitalInputs::read_immediate(trigger_input);
     if (gate_raised || get_gate_high())
       gate_state |= peaks::CONTROL_GATE;
@@ -215,6 +239,10 @@ private:
   peaks::MultistageEnvelope env_;
   EnvelopeType last_type_;
   bool gate_raised_;
+
+  uint32_t sinceTrigger_;
+  bool triggered_;
+
 };
 
 void EnvelopeGenerator::Init(OC::DigitalInput default_trigger) {
@@ -223,6 +251,8 @@ void EnvelopeGenerator::Init(OC::DigitalInput default_trigger) {
   env_.Init();
   last_type_ = ENV_TYPE_LAST;
   gate_raised_ = false;
+  sinceTrigger_ = 0;
+  triggered_ = false;
 }
 
 const char* const envelope_types[ENV_TYPE_LAST] = {
@@ -248,6 +278,9 @@ SETTINGS_DECLARE(EnvelopeGenerator, ENV_SETTING_LAST) {
   { 128, 0, 255, "S3", NULL, settings::STORAGE_TYPE_U16 },
   { 128, 0, 255, "S4", NULL, settings::STORAGE_TYPE_U16 },
   { OC::DIGITAL_INPUT_1, OC::DIGITAL_INPUT_1, OC::DIGITAL_INPUT_4, "Trigger input", OC::Strings::trigger_input_names, settings::STORAGE_TYPE_U8 },
+  { 0, 0, 999, "Tr delay msecs", NULL, settings::STORAGE_TYPE_U16 },
+  { 0, 0, 64, "Tr delay secs", NULL, settings::STORAGE_TYPE_U8 },
+  { 0, 0, 1, "Tr ignore", OC::Strings::no_yes, settings::STORAGE_TYPE_U4 },
   { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_SEG4, "CV1 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
   { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_SEG4, "CV2 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
   { CV_MAPPING_NONE, CV_MAPPING_NONE, CV_MAPPING_SEG4, "CV3 -> ", cv_mapping_names, settings::STORAGE_TYPE_U4 },
