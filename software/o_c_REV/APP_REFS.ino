@@ -255,7 +255,7 @@ void ReferenceChannel::RenderScreensaver(weegfx::coord_t start_x) const {
     graphics.printf("%01d.%03d", octave, semitone);
   } else {
     graphics.drawHLine(start_x, y + 4, 2);
-    graphics.printf("%01d.%03d", -octave, semitone);
+    graphics.printf("%01d.%03d", -octave - 1, 1000 - semitone);
   }
 }
 
