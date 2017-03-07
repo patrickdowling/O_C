@@ -50,6 +50,7 @@ enum ChannelSetting {
   CHANNEL_SETTING_DELAY,
   CHANNEL_SETTING_TRANSPOSE,
   CHANNEL_SETTING_OCTAVE,
+  CHANNEL_SETTING_MAPPING,
   CHANNEL_SETTING_FINE,
   CHANNEL_SETTING_TURING_LENGTH,
   CHANNEL_SETTING_TURING_PROB,
@@ -184,6 +185,10 @@ public:
 
   int get_octave() const {
     return values_[CHANNEL_SETTING_OCTAVE];
+  }
+
+  braids::Quantizer::MappingMode get_mapping_mode() const {
+    return static_cast<braids::Quantizer::MappingMode>(values_[CHANNEL_SETTING_MAPPING]);
   }
 
   int get_fine() const {
@@ -357,6 +362,7 @@ public:
     instant_update_ = false;
     last_scale_ = -1;
     last_mask_ = 0;
+    last_mapping_ = braids::Quantizer::MAPPING_ACTUAL;
     last_sample_ = 0;
     clock_ = 0;
     int_seq_reset_ = false;
@@ -975,6 +981,8 @@ public:
       *settings++ = CHANNEL_SETTING_DELAY;
     }
     *settings++ = CHANNEL_SETTING_TRANSPOSE;
+    if (get_source() <= CHANNEL_SOURCE_CV4)
+      *settings++ = CHANNEL_SETTING_MAPPING;
     *settings++ = CHANNEL_SETTING_FINE;
 
     num_enabled_settings_ = settings - enabled_settings_;
@@ -1032,6 +1040,7 @@ private:
   bool instant_update_;
   int last_scale_;
   uint16_t last_mask_;
+  braids::Quantizer::MappingMode last_mapping_;
   int32_t last_sample_;
   uint8_t clock_;
   bool int_seq_reset_;
@@ -1061,14 +1070,16 @@ private:
     force_update_ = false;
     const int scale = get_scale(DUMMY);
     uint16_t mask = get_mask();
+    braids::Quantizer::MappingMode mapping = get_mapping_mode();
 
     if (mask_rotate)
       mask = OC::ScaleEditor<QuantizerChannel>::RotateMask(mask, OC::Scales::GetScale(scale).num_notes, mask_rotate);
 
-    if (force || (last_scale_ != scale || last_mask_ != mask)) {
+    if (force || (last_scale_ != scale || last_mask_ != mask || last_mapping_ != mapping)) {
       last_scale_ = scale;
       last_mask_ = mask;
-      quantizer_.Configure(OC::Scales::GetScale(scale), mask);
+      last_mapping_ = mapping;
+      quantizer_.Configure(OC::Scales::GetScale(scale), mask, mapping);
       return true;
     } else {
       return false;
@@ -1096,6 +1107,10 @@ const char* const aux_cv_dest[5] = {
   "-", "root", "oct", "trns", "mask"
 };
 
+const char* const mapping_mode_names[2] = {
+  "Act", "Equ"
+};
+
 SETTINGS_DECLARE(QuantizerChannel, CHANNEL_SETTING_LAST) {
   { OC::Scales::SCALE_SEMI, 0, OC::Scales::NUM_SCALES - 1, "Scale", OC::scale_names, settings::STORAGE_TYPE_U8 },
   { 0, 0, 11, "Root", OC::Strings::note_names_unpadded, settings::STORAGE_TYPE_U8 },
@@ -1107,6 +1122,7 @@ SETTINGS_DECLARE(QuantizerChannel, CHANNEL_SETTING_LAST) {
   { 0, 0, OC::kNumDelayTimes - 1, "Trigger delay", OC::Strings::trigger_delay_times, settings::STORAGE_TYPE_U4 },
   { 0, -5, 7, "Transpose", NULL, settings::STORAGE_TYPE_I8 },
   { 0, -4, 4, "Octave", NULL, settings::STORAGE_TYPE_I8 },
+  { 0, 0, 1, "CV mapping", mapping_mode_names, settings::STORAGE_TYPE_U4 },
   { 0, -999, 999, "Fine", NULL, settings::STORAGE_TYPE_I16 },
   { 16, 1, 32, "LFSR length", NULL, settings::STORAGE_TYPE_U8 },
   { 128, 0, 255, "LFSR prb", NULL, settings::STORAGE_TYPE_U8 },

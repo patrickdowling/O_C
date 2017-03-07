@@ -44,6 +44,7 @@ void Quantizer::Init() {
   transpose_ = 0;
   previous_boundary_ = 0;
   next_boundary_ = 0;
+  mapping_ = MAPPING_ACTUAL;
   for (int16_t i = 0; i < 128; ++i) {
     codebook_[i] = (i - 64) << 7;
   }
@@ -53,7 +54,8 @@ void Quantizer::Configure(
     const int16_t* notes,
     int16_t span,
     size_t num_notes,
-    uint16_t mask) {
+    uint16_t mask,
+    MappingMode mapping) {
   enabled_ = notes != NULL && num_notes != 0 && span != 0 && (mask & ~(0xffff<<num_notes));
   if (enabled_) {
 
@@ -66,24 +68,60 @@ void Quantizer::Configure(
         enabled_notes_[num_enabled_notes++] = notes[i];
       mask >>= 1;
     }
-    num_notes = num_enabled_notes;
-    notes = enabled_notes_;
 
-    int32_t octave = 0;
-    size_t note = 0;
-    int16_t root = 0;
-    for (int32_t i = 0; i < 64; ++i) {
-      int32_t up = root + notes[note] + span * octave;
-      int32_t down = root + notes[num_notes - 1 - note] + (-octave - 1) * span;
-      CLIP(up)
-      CLIP(down)
-      codebook_[64 + i] = up;
-      codebook_[64 - i - 1] = down;
-      ++note;
-      if (note >= num_notes) {
-        note = 0;
-        ++octave;
-      }
+    if (MAPPING_ACTUAL == mapping)
+      BuildCodebook(enabled_notes_, span, num_enabled_notes);
+    else
+      BuildCodebookEqual(enabled_notes_, span, num_enabled_notes);
+    mapping_ = mapping;
+  }
+}
+
+void Quantizer::BuildCodebook(const int16_t *notes, int16_t span, size_t num_notes) {
+  int32_t octave = 0;
+  size_t note = 0;
+  int16_t root = 0;
+  for (int32_t i = 0; i < 64; ++i) {
+    int32_t up = root + notes[note] + span * octave;
+    int32_t down = root + notes[num_notes - 1 - note] + (-octave - 1) * span;
+    CLIP(up);
+    CLIP(down);
+    codebook_[64 + i] = up;
+    codebook_[64 - i - 1] = down;
+    ++note;
+    if (note >= num_notes) {
+      note = 0;
+      ++octave;
+    }
+  }
+}
+
+void Quantizer::BuildCodebookEqual(const int16_t *notes, int16_t span, size_t num_notes) {
+  (void)notes;
+  // For this distribution, it might even be better to avoid use of a codebook
+  // and do the lookup directly since the notes are evenly distributed.
+  int32_t division = span / num_notes;
+  int16_t octave = 0;
+  size_t note = 0;
+  for (int32_t i = 0; i < 64; ++i) {
+    int32_t up = note * division + span * octave;
+    int32_t down = (num_notes - 1 - note) * division + (-octave -1) * span;
+    CLIP(up);
+    CLIP(down);
+    codebook_[64 + i] = up;
+    codebook_[64 - i - 1] = down;
+
+    up = notes[note] + span * octave;
+    down = notes[num_notes - 1 - note] + (-octave - 1) * span;
+    CLIP(up);
+    CLIP(down);
+    mapped_codebook_[64 + i] = up;
+    mapped_codebook_[64 - i - 1] = down;
+
+    ++note;
+    if (note >= num_notes) {
+      note = 0;
+      ++octave;
     }
   }
 }
@@ -123,7 +161,9 @@ int32_t Quantizer::Process(int32_t pitch, int32_t root, int32_t transpose) {
     q += transpose;
     if (q < 1) q = 1;
     else if (q > 126) q = 126;
-    codeword_ = codebook_[q];
+    codeword_ = (MAPPING_ACTUAL == mapping_)
+        ? codebook_[q]
+        : mapped_codebook_[q];
     transpose_ = transpose;
     pitch = codeword_;
   }

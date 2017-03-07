@@ -33,7 +33,7 @@
 #include "util/util_macros.h"
 
 namespace braids {
-  
+
 struct Scale {
   int16_t span;
   size_t num_notes;
@@ -44,19 +44,24 @@ void SortScale(Scale &);
 
 class Quantizer {
  public:
+  enum MappingMode {
+    MAPPING_ACTUAL,
+    MAPPING_EQUAL
+  };
+
   Quantizer() { }
   ~Quantizer() { }
-  
+
   void Init();
-  
+
   int32_t Process(int32_t pitch) {
     return Process(pitch, 0, 0);
   }
-  
+
   int32_t Process(int32_t pitch, int32_t root, int32_t transpose);
-  
-  void Configure(const Scale& scale, uint16_t mask = 0xffff) {
-    Configure(scale.notes, scale.span, scale.num_notes, mask);
+
+  void Configure(const Scale& scale, uint16_t mask, MappingMode mapping = MAPPING_ACTUAL) {
+    Configure(scale.notes, scale.span, scale.num_notes, mask, mapping);
   }
 
   bool enabled() const {
@@ -67,15 +72,20 @@ class Quantizer {
   int32_t Lookup(int32_t index) const;
 
  private:
-  void Configure(const int16_t* notes, int16_t span, size_t num_notes, uint16_t mask);
+  void Configure(const int16_t* notes, int16_t span, size_t num_notes, uint16_t mask, MappingMode mapping);
+  void BuildCodebook(const int16_t *notes, int16_t span, size_t num_notes);
+  void BuildCodebookEqual(const int16_t *notes, int16_t span, size_t num_notes);
+
   bool enabled_;
   int16_t enabled_notes_[16];
   int16_t codebook_[128];
+  int16_t mapped_codebook_[128];
   int32_t codeword_;
   int32_t transpose_;
   int32_t previous_boundary_;
   int32_t next_boundary_;
-  
+  MappingMode mapping_;
+
   DISALLOW_COPY_AND_ASSIGN(Quantizer);
 };
 
