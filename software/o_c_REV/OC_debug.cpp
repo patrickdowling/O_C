@@ -159,6 +159,7 @@ void Ui::DebugStats() {
 
     while (event_queue_.available()) {
       UI::Event event = event_queue_.PullEvent();
+      CheckPassphrase(event);
       if (CONTROL_BUTTON_R == event.control) {
         exit_loop = true;
       } else if (CONTROL_BUTTON_L == event.control) {

@@ -48,6 +48,7 @@ enum AppEvent {
 struct App {
   uint16_t id;
 	const char *name;
+  const char *boring_name;
 
   void (*Init)(); // one-time init
   size_t (*storageSize)(); // binary size of storage requirements

@@ -116,6 +116,8 @@ private:
   bool screensaver_;
   bool preempt_screensaver_;
 
+  uint8_t passphrase_state_;
+
   UI::Encoder<encR1, encR2> encoder_right_;
   UI::Encoder<encL1, encL2> encoder_left_;
 
@@ -143,6 +145,8 @@ private:
 
     return ignore;
   }
+
+  void CheckPassphrase(const UI::Event &event);
 
 };
 

@@ -24,8 +24,8 @@
 #include "OC_digital_inputs.h"
 #include "OC_autotune.h"
 
-#define DECLARE_APP(a, b, name, prefix, isr) \
-{ TWOCC<a,b>::value, name, \
+#define DECLARE_APP(a, b, name, boring_name, prefix, isr) \
+{ TWOCC<a,b>::value, name, boring_name, \
   prefix ## _init, prefix ## _storageSize, prefix ## _save, prefix ## _restore, \
   prefix ## _handleAppEvent, \
   prefix ## _loop, prefix ## _menu, prefix ## _screensaver, \
@@ -34,39 +34,21 @@
   isr \
 }
 
-#ifdef BORING_APP_NAMES
 OC::App available_apps[] = {
-  DECLARE_APP('A','S', "ASR", ASR, ASR_isr),
-  DECLARE_APP('H','A', "Triads", H1200, H1200_isr),
-  DECLARE_APP('A','T', "Vectors", Automatonnetz, Automatonnetz_isr),
-  DECLARE_APP('Q','Q', "4x quantiser", QQ, QQ_isr),
-  DECLARE_APP('D','Q', "2x quantiser", DQ, DQ_isr),
-  DECLARE_APP('P','L', "Quadrature LFO", POLYLFO, POLYLFO_isr),
-  DECLARE_APP('L','R', "Lorenz", LORENZ, LORENZ_isr),
-  DECLARE_APP('E','G', "4x EG", ENVGEN, ENVGEN_isr),
-  DECLARE_APP('S','Q', "Sequencer", SEQ, SEQ_isr),
-  DECLARE_APP('B','B', "Balls", BBGEN, BBGEN_isr),
-  DECLARE_APP('B','Y', "Bytebeats", BYTEBEATGEN, BYTEBEATGEN_isr),
-  DECLARE_APP('C','Q', "Chords", CHORDS, CHORDS_isr),
-  DECLARE_APP('R','F', "Voltages", REFS, REFS_isr)
+  DECLARE_APP('A','S', "CopierMaschine", "ASR", ASR, ASR_isr),
+  DECLARE_APP('H','A', "Harrington 1200", "Triads", H1200, H1200_isr),
+  DECLARE_APP('A','T', "Automatonnetz", "Vectors", Automatonnetz, Automatonnetz_isr),
+  DECLARE_APP('Q','Q', "Quantermain", "4x quantiser", QQ, QQ_isr),
+  DECLARE_APP('D','Q', "Meta-Q", "2x quantizer", DQ, DQ_isr),
+  DECLARE_APP('P','L', "Quadraturia", "Quadrature LFO", POLYLFO, POLYLFO_isr),
+  DECLARE_APP('L','R', "Low-rents", "Lorenz", LORENZ, LORENZ_isr),
+  DECLARE_APP('E','G', "Piqued", "4x EG", ENVGEN, ENVGEN_isr),
+  DECLARE_APP('S','Q', "Sequins", "Sequencer", SEQ, SEQ_isr),
+  DECLARE_APP('B','B', "Dialectic Ping Pong", "Balls", BBGEN, BBGEN_isr),
+  DECLARE_APP('B','Y', "Viznutcracker sweet", "Bytebeats", BYTEBEATGEN, BYTEBEATGEN_isr),
+  DECLARE_APP('C','Q', "Acid Curds", "Chords", CHORDS, CHORDS_isr),
+  DECLARE_APP('R','F', "References", "Voltages", REFS, REFS_isr)
 };
-#else 
-OC::App available_apps[] = {
-  DECLARE_APP('A','S', "CopierMaschine", ASR, ASR_isr),
-  DECLARE_APP('H','A', "Harrington 1200", H1200, H1200_isr),
-  DECLARE_APP('A','T', "Automatonnetz", Automatonnetz, Automatonnetz_isr),
-  DECLARE_APP('Q','Q', "Quantermain", QQ, QQ_isr),
-  DECLARE_APP('D','Q', "Meta-Q", DQ, DQ_isr),
-  DECLARE_APP('P','L', "Quadraturia", POLYLFO, POLYLFO_isr),
-  DECLARE_APP('L','R', "Low-rents", LORENZ, LORENZ_isr),
-  DECLARE_APP('E','G', "Piqued", ENVGEN, ENVGEN_isr),
-  DECLARE_APP('S','Q', "Sequins", SEQ, SEQ_isr),
-  DECLARE_APP('B','B', "Dialectic Ping Pong", BBGEN, BBGEN_isr),
-  DECLARE_APP('B','Y', "Viznutcracker sweet", BYTEBEATGEN, BYTEBEATGEN_isr),
-  DECLARE_APP('C','Q', "Acid Curds", CHORDS, CHORDS_isr),
-  DECLARE_APP('R','F', "References", REFS, REFS_isr)
-};
-#endif
 
 static constexpr int NUM_AVAILABLE_APPS = ARRAY_SIZE(available_apps);
 
@@ -78,7 +60,7 @@ struct GlobalSettings {
   static constexpr uint32_t FOURCC = FOURCC<'O','C','S',2>::value;
 
   bool encoders_enable_acceleration;
-  bool reserved0;
+  bool boring_mode;
   bool reserved1;
   uint32_t DAC_scaling;
   uint16_t current_app_id;
@@ -249,7 +231,11 @@ void Init(bool reset_settings) {
 
   global_settings.current_app_id = DEFAULT_APP_ID;
   global_settings.encoders_enable_acceleration = OC_ENCODERS_ENABLE_ACCELERATION_DEFAULT;
-  global_settings.reserved0 = false;
+#ifdef BORING_APP_NAMES
+  global_settings.boring_mode = true;
+#else
+  global_settings.boring_mode = false;
+#endif
   global_settings.reserved1 = false;
   global_settings.DAC_scaling = 0; //OC::DAC::DEFAULT_SCALING;
 
@@ -312,6 +298,8 @@ void Init(bool reset_settings) {
   SERIAL_PRINTLN("Encoder acceleration: %s", global_settings.encoders_enable_acceleration ? "enabled" : "disabled");
   ui.encoders_enable_acceleration(global_settings.encoders_enable_acceleration);
 
+  SERIAL_PRINTLN("Boring mode: %s", global_settings.boring_mode ? "enabled" : "disabled");
+
   set_current_app(current_app_index);
   current_app->HandleAppEvent(APP_EVENT_RESUME);
 
@@ -333,7 +321,7 @@ void draw_app_menu(const menu::ScreenCursor<5> &cursor) {
     item.selected = current == cursor.cursor_pos();
     item.SetPrintPos();
     graphics.movePrintPos(weegfx::Graphics::kFixedFontW, 0);
-    graphics.print(available_apps[current].name);
+    graphics.print(global_settings.boring_mode ? available_apps[current].boring_name : available_apps[current].name);
     if (global_settings.current_app_id == available_apps[current].id)
        graphics.drawBitmap8(item.x + 2, item.y + 1, 4, bitmap_indicator_4x8);
     item.DrawCustom();
@@ -349,6 +337,54 @@ void draw_save_message(uint8_t c) {
   GRAPHICS_END_FRAME();
 }
 
+// BA = LR, which kind of makes sense since R encoder is "main"
+// It ends up so that this combo invokes and closes the debug menu
+void Ui::CheckPassphrase(const UI::Event &event) {
+  uint8_t passphrase_state = passphrase_state_;
+  if (UI::EVENT_BUTTON_LONG_PRESS != event.type) {
+    switch (passphrase_state) {
+      case 0:
+      case 1:
+        if (CONTROL_BUTTON_UP == event.control)
+          ++passphrase_state;
+        break;
+      case 2:
+      case 3:
+        if (CONTROL_BUTTON_DOWN == event.control)
+          ++passphrase_state;
+        break;
+      case 4:
+      case 6:
+        if (CONTROL_ENCODER_L == event.control && UI::EVENT_ENCODER == event.type && event.value < 0)
+          ++passphrase_state;
+        break;
+      case 5:
+      case 7:
+        if (CONTROL_ENCODER_L == event.control && UI::EVENT_ENCODER == event.type && event.value > 0)
+          ++passphrase_state;
+        break;
+      case 8:
+        if (CONTROL_BUTTON_L == event.control)
+          ++passphrase_state;
+        break;
+      case 9:
+        if (CONTROL_BUTTON_R == event.control)
+          ++passphrase_state;
+        break;
+    }
+  }
+  SERIAL_PRINTLN("passphrase_state=%d", passphrase_state);
+
+  if (10 == passphrase_state) {
+    global_settings.boring_mode = !global_settings.boring_mode;
+    SERIAL_PRINTLN("Boring mode: %s", global_settings.boring_mode ? "enabled" : "disabled");
+    passphrase_state = 0;
+  } else if (passphrase_state == passphrase_state_) {
+    passphrase_state = 0;
+  }
+  passphrase_state_ = passphrase_state;
+}
+
 void Ui::AppSettings() {
 
   SetButtonIgnoreMask();
@@ -359,6 +395,7 @@ void Ui::AppSettings() {
   cursor.Init(0, NUM_AVAILABLE_APPS - 1);
   cursor.Scroll(apps::index_of(global_settings.current_app_id));
 
+  passphrase_state_ = 0;
   bool change_app = false;
   bool save = false;
   while (!change_app && idle_time() < APP_SELECTION_TIMEOUT_MS) {
@@ -368,6 +405,8 @@ void Ui::AppSettings() {
       if (IgnoreEvent(event))
         continue;
 
+      CheckPassphrase(event);
+
       if (UI::EVENT_ENCODER == event.type && CONTROL_ENCODER_R == event.control) {
         cursor.Scroll(event.value);
       } else if (CONTROL_BUTTON_R == event.control) {
@@ -375,7 +414,7 @@ void Ui::AppSettings() {
         change_app = true;
       } else if (CONTROL_BUTTON_L == event.control) {
         ui.DebugStats();
-      } else if (CONTROL_BUTTON_UP == event.control) {
+      } else if (CONTROL_BUTTON_UP == event.control && event.type == UI::EVENT_BUTTON_LONG_PRESS) {
         bool enabled = !global_settings.encoders_enable_acceleration;
         SERIAL_PRINTLN("Encoder acceleration: %s", enabled ? "enabled" : "disabled");
         ui.encoders_enable_acceleration(enabled);
