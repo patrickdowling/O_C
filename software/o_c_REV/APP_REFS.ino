@@ -356,7 +356,7 @@ public:
         #endif
         octaves_cnt_++;
         // go to next step, if done:
-        if (octaves_cnt_ >= OCTAVES) {
+        if (octaves_cnt_ >= OC::kAutoCalibrationOctaves) {
           octaves_cnt_ = 0x0;
           autotuner_step_++;
         }
@@ -370,8 +370,10 @@ public:
       case OC::DAC_VOLT_2:
       case OC::DAC_VOLT_3:
       case OC::DAC_VOLT_4:
+#ifndef BUCHLA_4U
       case OC::DAC_VOLT_5:
       case OC::DAC_VOLT_6:
+#endif
       { 
         bool _update = auto_frequency();
         
@@ -446,7 +448,7 @@ public:
         }
       }
       // then stop ... 
-      if (octaves_cnt_ > OCTAVES) { 
+      if (octaves_cnt_ > OC::kAutoCalibrationOctaves) { 
         autotune_completed_ = true;
         // and point to auto data ...
         OC::DAC::set_auto_channel_calibration_data(dac_channel_);

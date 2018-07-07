@@ -48,10 +48,18 @@ enum AUTO_CALIBRATION_STEP {
   DAC_VOLT_2, 
   DAC_VOLT_3, 
   DAC_VOLT_4, 
+#ifndef BUCHLA_4U
   DAC_VOLT_5, 
   DAC_VOLT_6,
+#endif
   AUTO_CALIBRATION_STEP_LAST
 };
+
+#ifdef BUCHLA_4U
+static constexpr int16_t kAutoCalibrationOctaves = OCTAVES - 2;
+#else
+static constexpr int16_t kAutoCalibrationOctaves = OCTAVES;
+#endif
 
 template <typename Owner>
 class Autotuner {
