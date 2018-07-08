@@ -167,11 +167,15 @@ UiMode Ui::Splashscreen(bool &reset_settings) {
     GRAPHICS_BEGIN_FRAME(true);
 
     menu::DefaultTitleBar::Draw();
-    #ifdef BUCHLA_cOC
+#ifdef BUCHLA_4U
+#ifdef BUCHLA_cOC
       graphics.print("NLM card O_C");
-    #else
+#else
+      graphics.print("NLM 2OC");
+#endif
+#else
       graphics.print("Ornaments & Crimes");
-    #endif
+#endif
     weegfx::coord_t y = menu::CalcLineY(0);
 
     graphics.setPrintPos(menu::kIndentDx, y + menu::kTextDy);
