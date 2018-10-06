@@ -369,8 +369,8 @@ public:
       case OC::DAC_VOLT_1:
       case OC::DAC_VOLT_2:
       case OC::DAC_VOLT_3:
-      case OC::DAC_VOLT_4:
 #ifndef BUCHLA_4U
+      case OC::DAC_VOLT_4:
       case OC::DAC_VOLT_5:
       case OC::DAC_VOLT_6:
 #endif
@@ -450,6 +450,23 @@ public:
       // then stop ... 
       if (octaves_cnt_ > OC::kAutoCalibrationOctaves) { 
         autotune_completed_ = true;
+#ifdef BUCHLA_4U
+        // kAutoCalibrationOctaves is < OCTAVES here by request to allow the
+        // function to work. Fill up the remaining octaves by extrapolating
+        // the last calibrated octave. A perhaps better solution would be to
+        // have the start/end octave configurable by the user.
+        int32_t octave = octaves_cnt_;
+        auto *channel_autocal_data  = &OC::auto_calibration_data[dac_channel_];
+        int32_t delta =
+            channel_autocal_data->auto_calibrated_octaves[octave - 1] - 
+            channel_autocal_data->auto_calibrated_octaves[octave - 2];
+        while (octave <= OCTAVES) {
+          int32_t guesstimate = channel_autocal_data->auto_calibrated_octaves[octave - 1] + delta;
+          CONSTRAIN(guesstimate, 0, 65535);
+          OC::DAC::update_auto_channel_calibration_data(dac_channel_, octave, guesstimate);
+          ++octave;
+        }
+#endif
         // and point to auto data ...
         OC::DAC::set_auto_channel_calibration_data(dac_channel_);
         autotuner_step_++;

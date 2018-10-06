@@ -47,8 +47,8 @@ enum AUTO_CALIBRATION_STEP {
   DAC_VOLT_1, 
   DAC_VOLT_2, 
   DAC_VOLT_3, 
-  DAC_VOLT_4, 
 #ifndef BUCHLA_4U
+  DAC_VOLT_4, 
   DAC_VOLT_5, 
   DAC_VOLT_6,
 #endif
@@ -56,7 +56,8 @@ enum AUTO_CALIBRATION_STEP {
 };
 
 #ifdef BUCHLA_4U
-static constexpr int16_t kAutoCalibrationOctaves = OCTAVES - 2;
+static constexpr int16_t kAutoCalibrationOctaves = AUTO_CALIBRATION_STEP_LAST - DAC_VOLT_3m;
+static_assert(kAutoCalibrationOctaves == 7, "Expected 7 octaves");
 #else
 static constexpr int16_t kAutoCalibrationOctaves = OCTAVES;
 #endif
