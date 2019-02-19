@@ -81,11 +81,6 @@ void FASTRUN CORE_timer_ISR() {
   // need extra precautions.
   OC::DigitalInputs::Scan();
 
-#ifndef OC_UI_SEPARATE_ISR
-  TODO needs a counter
-  UI_timer_ISR();
-#endif
-
   ++OC::CORE::ticks;
   if (OC::CORE::app_isr_enabled)
     OC::apps::ISR();
@@ -125,11 +120,9 @@ void setup() {
   CORE_timer.begin(CORE_timer_ISR, OC_CORE_TIMER_RATE);
   CORE_timer.priority(OC_CORE_TIMER_PRIO);
 
-#ifdef OC_UI_SEPARATE_ISR
   SERIAL_PRINTLN("* UI ISR @%luus", OC_UI_TIMER_RATE);
   UI_timer.begin(UI_timer_ISR, OC_UI_TIMER_RATE);
   UI_timer.priority(OC_UI_TIMER_PRIO);
-#endif
 
   // Display splash screen and optional calibration
   bool reset_settings = false;

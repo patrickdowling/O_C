@@ -49,7 +49,6 @@ static constexpr unsigned long SETTINGS_SAVE_TIMEOUT_MS = 1000;
 #define EEPROM_APPDATA_BINARY_SIZE (1000 - 4)
 
 #define OC_UI_DEBUG
-#define OC_UI_SEPARATE_ISR
 
 #define OC_ENCODERS_ENABLE_ACCELERATION_DEFAULT true
 

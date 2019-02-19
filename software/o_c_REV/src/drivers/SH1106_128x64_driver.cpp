@@ -28,6 +28,7 @@
 #include "../../OC_gpio.h"
 #include "../../OC_options.h"
 
+// NOTE: Don't disable DMA unless you absolutely know what you're doing. It will hurt you.
 #define DMA_PAGE_TRANSFER
 #ifdef DMA_PAGE_TRANSFER
 #include <DMAChannel.h>
