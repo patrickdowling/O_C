@@ -81,9 +81,12 @@ void FASTRUN CORE_timer_ISR() {
   // need extra precautions.
   OC::DigitalInputs::Scan();
 
-  ++OC::CORE::ticks;
-  if (OC::CORE::app_isr_enabled)
-    OC::apps::ISR();
+  {
+    DEBUG_PIN_SCOPE(OC_GPIO_DEBUG_PIN1);
+    ++OC::CORE::ticks;
+    if (OC::CORE::app_isr_enabled)
+      OC::apps::ISR();
+  }
 
   OC_DEBUG_RESET_CYCLES(OC::CORE::ticks, 16384, OC::DEBUG::ISR_cycles);
 }
