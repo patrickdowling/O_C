@@ -8,7 +8,9 @@
 #include <stdint.h>
 #include <string.h>
 
-//#define ENABLE_ADC_DEBUG
+// If enabled, use an interrupt to track DMA completion; otherwise use polling
+//#define OC_ADC_ENABLE_DMA_INTERRUPT
+
 
 enum ADC_CHANNEL {
   ADC_CHANNEL_1,
@@ -91,7 +93,9 @@ private:
   }
 
   static ::ADC adc_;
+#ifdef OC_ADC_ENABLE_DMA_INTERRUPT
   static volatile bool ready_;
+#endif
   static size_t scan_channel_;
   static CalibrationData *calibration_data_;
 
