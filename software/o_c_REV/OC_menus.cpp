@@ -38,6 +38,26 @@ void Init()
 {
 };
 
+void DrawEditIcon(weegfx::coord_t x, weegfx::coord_t y, int value, int min_value, int max_value) {
+  const uint8_t *src = OC::bitmap_edit_indicators_8;
+  if (value == max_value)
+    src += OC::kBitmapEditIndicatorW * 2;
+  else if (value == min_value)
+    src += OC::kBitmapEditIndicatorW;
+
+  graphics.drawBitmap8(x - 5, y + 1, OC::kBitmapEditIndicatorW, src);
+}
+
+void DrawEditIcon(weegfx::coord_t x, weegfx::coord_t y, int value, const settings::value_attr &attr) {
+  const uint8_t *src = OC::bitmap_edit_indicators_8;
+  if (value == attr.max_)
+    src += OC::kBitmapEditIndicatorW * 2;
+  else if (value == attr.min_)
+    src += OC::kBitmapEditIndicatorW;
+
+  graphics.drawBitmap8(x - 5, y + 1, OC::kBitmapEditIndicatorW, src);
+}
+
 }; // namespace menu
 
 
