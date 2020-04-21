@@ -44,7 +44,8 @@ struct CalibrationData {
   uint8_t display_offset;
   uint32_t flags;
   uint8_t screensaver_timeout; // 0: default, else seconds
-  uint8_t reserved0[3];
+  uint8_t blanking_timeout;    // 0: off, else minutes-ish after screensaver
+  uint8_t reserved0[2];
   #ifdef VOR
     /* less complicated this way than adding it to DAC::CalibrationData... */
     uint32_t v_bias; // upper 2 bytes: asymmetric; lower 2 bytes: bipolar.

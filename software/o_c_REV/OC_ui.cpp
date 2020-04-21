@@ -28,6 +28,7 @@ Ui ui;
 void Ui::Init() {
   ticks_ = 0;
   set_screensaver_timeout(SCREENSAVER_TIMEOUT_S);
+  set_blanking_timeout(BLANKING_TIMEOUT_M);
 
   #ifdef VOR
   static const int button_pins[] = { but_top, but_bot, butL, butR, but_mid };
@@ -65,6 +66,10 @@ void Ui::set_screensaver_timeout(uint32_t seconds) {
   screensaver_timeout_ = timeout;
   SERIAL_PRINTLN("Set screensaver timeout to %lu", timeout);
   event_queue_.Poke();
+}
+
+void Ui::set_blanking_timeout(uint32_t minutes) {
+  blanking_timeout_ = minutes * 60U * 1000U;
 }
 
 void FASTRUN Ui::_Poke() {

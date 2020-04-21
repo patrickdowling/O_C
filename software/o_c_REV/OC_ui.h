@@ -110,10 +110,17 @@ public:
 
   void set_screensaver_timeout(uint32_t seconds);
 
+  uint32_t blanking_timeout() const {
+    return blanking_timeout_;
+  }
+
+  void set_blanking_timeout(uint32_t minutes);
+
 private:
 
   uint32_t ticks_;
   uint32_t screensaver_timeout_;
+  uint32_t blanking_timeout_;
 
   UI::Button buttons_[CONTROL_BUTTON_LAST];
   uint32_t button_press_time_[CONTROL_BUTTON_LAST];

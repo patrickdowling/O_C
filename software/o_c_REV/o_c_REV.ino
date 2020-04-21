@@ -136,6 +136,7 @@ void setup() {
     ui_mode = OC::UI_MODE_MENU;
   }
   OC::ui.set_screensaver_timeout(OC::calibration_data.screensaver_timeout);
+  OC::ui.set_blanking_timeout(OC::calibration_data.blanking_timeout);
 
   // initialize apps
   OC::apps::Init(reset_settings);
@@ -146,7 +147,10 @@ void setup() {
 void FASTRUN loop() {
 
   OC::CORE::app_isr_enabled = true;
+
   uint32_t menu_redraws = 0;
+  bool blanking = false;
+
   while (true) {
 
     // don't change current_app while it's running
@@ -171,7 +175,8 @@ void FASTRUN loop() {
           #endif
           
         } else {
-          OC::apps::current_app->DrawScreensaver();
+          if (!blanking)
+            OC::apps::current_app->DrawScreensaver();
         }
         MENU_REDRAW = 0;
         LAST_REDRAW_TIME = millis();
@@ -186,11 +191,20 @@ void FASTRUN loop() {
 
     // State transition for app
     if (mode != ui_mode) {
-      if (OC::UI_MODE_SCREENSAVER == mode)
+      if (OC::UI_MODE_SCREENSAVER == mode) {
         OC::apps::current_app->HandleAppEvent(OC::APP_EVENT_SCREENSAVER_ON);
-      else if (OC::UI_MODE_SCREENSAVER == ui_mode)
+      } else if (OC::UI_MODE_SCREENSAVER == ui_mode) {
         OC::apps::current_app->HandleAppEvent(OC::APP_EVENT_SCREENSAVER_OFF);
+        blanking = false;
+      }
       ui_mode = mode;
+    }
+
+    if (OC::UI_MODE_SCREENSAVER == ui_mode && !blanking) {
+      auto blanking_timeout = OC::ui.blanking_timeout();
+      if (blanking_timeout &&
+          (OC::ui.idle_time() >= blanking_timeout))
+        blanking = true;
     }
 
     if (millis() - LAST_REDRAW_TIME > REDRAW_TIMEOUT_MS)
